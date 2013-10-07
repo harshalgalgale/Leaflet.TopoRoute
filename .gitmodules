@@ -19,3 +19,9 @@
 [submodule "leaflet-ajax"]
 	path = leaflet-ajax
 	url = https://github.com/calvinmetcalf/leaflet-ajax.git
+[submodule "Leaflet.LayerIndex"]
+	path = Leaflet.LayerIndex
+	url = https://github.com/makinacorpus/Leaflet.LayerIndex.git
+[submodule "RTree"]
+	path = RTree
+	url = https://github.com/imbcmdth/RTree.git
