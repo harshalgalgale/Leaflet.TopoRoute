@@ -1,29 +1,61 @@
+L.Mixin.ActivableControl = {
+    activable: function (state) {
+        this._activable = state === undefined ? true : !!state;
+        if (this._container) {
+            if (state)
+                L.DomUtil.removeClass(this._container, 'leaflet-disabled');
+            else
+                L.DomUtil.addClass(this._container, 'leaflet-disabled');
+        }
+    },
+
+    activate: function () {
+        if (!!!this._activable)
+            return;  // do nothing if not activable
+
+        this.handler.enable();
+        L.DomUtil.addClass(this._container, 'active');
+    },
+
+    deactivate: function () {
+        this.handler.disable();
+        L.DomUtil.removeClass(this._container, 'active');
+    },
+
+    toggle: function() {
+        if (this.handler.enabled())
+            this.deactivate();
+        else
+            this.activate();
+    },
+};
+
+
 L.Control.TopoRouteControl = L.Control.extend({
+
+    includes: L.Mixin.ActivableControl,
 
     statics: {
         TITLE: 'Route',
         LABEL: 'o',
     },
 
-    initialize: function (map, pathsLayer, options) {
+    initialize: function (options) {
         L.Control.prototype.initialize.call(this, options);
-        this._pathsLayer = pathsLayer;
-
-        this._result = null;
+        this.handler = null;
     },
 
     onAdd: function (map) {
-        this._pathsLayer.on('data:loaded', this._onPathLoaded, this);
-
         if (this._map.almostOver === undefined) {
-            throw 'Leaflet.AlmostOver required.'
+            throw 'Leaflet.AlmostOver required.';
         }
+        this.handler = new L.Handler.TopoRouteHandler(map);
+        this.handler.on('ready', this.activable, this);
         return this._initContainer();
     },
 
     _initContainer: function () {
-        // Create a button, and bind click on hidden file input
-        var zoomName = 'leaflet-control-toporoute leaflet-control-zoom',
+        var zoomName = 'leaflet-control-toporoute leaflet-control-zoom leaflet-disabled',
             barName = 'leaflet-bar',
             partName = barName + '-part',
             container = L.DomUtil.create('div', zoomName + ' ' + barName);
@@ -31,6 +63,7 @@ L.Control.TopoRouteControl = L.Control.extend({
         link.innerHTML = L.Control.TopoRouteControl.LABEL;
         link.href = '#';
         link.title = L.Control.TopoRouteControl.TITLE;
+        this._button = link;
 
         var stop = L.DomEvent.stopPropagation;
         L.DomEvent
@@ -39,19 +72,53 @@ L.Control.TopoRouteControl = L.Control.extend({
             .on(link, 'dblclick', stop)
             .on(link, 'click', L.DomEvent.preventDefault)
             .on(link, 'click', function (e) {
-                
-            });
+                this.toggle();
+            }, this);
         return container;
+    },
+});
+
+
+L.Handler.TopoRouteHandler = L.Handler.extend({
+
+    includes: L.Mixin.Events,
+
+    initialize: function (map) {
+        L.Handler.prototype.initialize.call(this, map);
+        this._pathsLayer = null;
+        this._result = null;
+    },
+
+    addHooks: function () {
+        if (!this._pathsLayer)
+            return;
+
+        this._pathsLayer.eachLayer(function (path) {
+            path.polylineHandles.enable();
+        }, this);
+    },
+
+    removeHooks: function () {
+        if (!this._pathsLayer)
+            return;
+
+        this._pathsLayer.eachLayer(function (path) {
+            path.polylineHandles.disable();
+        });
+    },
+
+    setPathsLayer: function (pathsLayer) {
+        this._pathsLayer = pathsLayer;
+        this._pathsLayer.on('data:loaded', this._onPathLoaded, this);
     },
 
     _onPathLoaded: function () {
-        var oneline = this._pathsLayer.getLayers()[0];
-        oneline.setStyle({color: 'green', opacity: 1.0, weigth: 4, color: 'red'});
-        this._map.almostOver.addLayer(oneline);
+        this._pathsLayer.eachLayer(function (path) {
+            this._map.almostOver.addLayer(path);
+            path.polylineHandles.addGuideLayer(this._pathsLayer);
+        }, this);
 
-        oneline.polylineHandles.addGuideLayer(this._pathsLayer);
-        oneline.polylineHandles.enable();
-        oneline.polylineHandles.on('attach', this._onAttached, this);
+        this.fire('ready');
     },
 
     _onAttached: function (e) {
