@@ -96,6 +96,8 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         this._pathsLayer.eachLayer(function (path) {
             path.polylineHandles.enable();
         }, this);
+
+        this._map.almostOver.enable();
     },
 
     removeHooks: function () {
@@ -113,8 +115,9 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
     },
 
     _onPathLoaded: function () {
+        this._map.almostOver.addLayer(this._pathsLayer);
+
         this._pathsLayer.eachLayer(function (path) {
-            this._map.almostOver.addLayer(path);
             path.polylineHandles.addGuideLayer(this._pathsLayer);
         }, this);
 
