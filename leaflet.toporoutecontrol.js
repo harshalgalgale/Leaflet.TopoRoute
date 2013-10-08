@@ -117,9 +117,8 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
     _onPathLoaded: function () {
         this._map.almostOver.addLayer(this._pathsLayer);
 
-        this._pathsLayer.eachLayer(function (path) {
-            path.polylineHandles.addGuideLayer(this._pathsLayer);
-        }, this);
+        var onePath = this._pathsLayer.getLayers()[0];
+        onePath.polylineHandles.addGuideLayer(this._pathsLayer);
 
         this.fire('ready');
     },

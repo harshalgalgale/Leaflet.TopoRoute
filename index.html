@@ -70,14 +70,12 @@
         var topologyControl = new L.Control.TopoRouteControl({position: 'topleft'});
         map.addControl(topologyControl);
 
-        var paths = L.geoJson.ajax('data/path.geojson', {style: {weight: 2}}).addTo(map);
-
+        var paths = L.geoJson.ajax('data/path.geojson', {style: {weight: 2}});
         topologyControl.handler.setPathsLayer(paths);
-
         paths.on('data:loaded', function () {
             map.fitBounds(paths.getBounds());
-        })
-
+        });
+        paths.addTo(map);
     };
   </script>
 </body>
