@@ -40,7 +40,72 @@ describe('L.Mixin.ActivableControl', function() {
             assert.isFalse(control.handler.enabled());
             control.activate();
             assert.isTrue(control.handler.enabled());
+            map.remove();
             done();
+        });
+    });
+
+});
+
+
+describe('L.Control.TopoRouteControl', function() {
+
+    var map;
+
+    beforeEach(function() {
+        map = L.map('map').fitWorld();
+    });
+
+    afterEach(function() {
+        map.remove();
+    });
+
+
+    describe('Initalization', function() {
+
+        it('should be deactivated by default', function(done) {
+            var control = new L.Control.TopoRouteControl();
+            assert.isFalse(!!control._activable);
+            done();
+        });
+
+        it('should fail if map has no almostOver handler', function(done) {
+            var control = new L.Control.TopoRouteControl();
+            assert.throws(function () {control.addTo(map);}, 'Leaflet.AlmostOver required.');
+            done();
+        });
+
+    });
+
+
+    describe('Activation', function() {
+
+        var control = new L.Control.TopoRouteControl();
+
+        beforeEach(function() {
+            map.almostOver = 1;
+            control.addTo(map);
+            control.handler.fire('ready');
+        });
+
+        it('should become activable one handler is ready', function(done) {
+            assert.isTrue(control._activable);
+            done();
+        });
+
+        it('should enable handler on click', function(done) {
+            assert.isFalse(control.handler.enabled());
+            var button = control._container.getElementsByTagName('a')[0];
+            clickElement(button);
+            assert.isTrue(control.handler.enabled());
+            done();
+
+            function clickElement(el) {
+                var e = document.createEvent('MouseEvents');
+                e.initMouseEvent('click', true, true, window,
+                        0, 0, 0, 0, 0, false, false, false, false, 0, null);
+                return el.dispatchEvent(e);
+            }
         });
     });
 
