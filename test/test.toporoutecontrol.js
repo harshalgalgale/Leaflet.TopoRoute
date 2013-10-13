@@ -156,9 +156,8 @@ describe('L.Handler.TopoRouteHandler', function() {
         });
 
         it('should add paths layer to polylineHandles guides', function(done) {
-            var onepath = paths.getLayers()[0];
-            var polyguides = onepath.polylineHandles._layers;
-            var guides = [];
+            var guides = [],
+                polyguides = handler.polylineHandles._layers;
             for (var i=0, n=polyguides.length; i<n; i++)
                 guides.push(L.stamp(polyguides[i]));
             assert.include(guides, L.stamp(paths));
@@ -167,13 +166,56 @@ describe('L.Handler.TopoRouteHandler', function() {
 
         it('should enable polyline handles when handler is enabled', function(done) {
             handler.enable();
-            paths.eachLayer(function (l) {
-                assert.isTrue(l.polylineHandles.enabled());
-            });
+            assert.isTrue(handler.polylineHandles.enabled());
             handler.disable();
-            paths.eachLayer(function (l) {
-                assert.isFalse(l.polylineHandles.enabled());
-            });
+            assert.isFalse(handler.polylineHandles.enabled());
+            done();
+        });
+    });
+
+
+    describe('Placing starting and end', function() {
+
+        it('should attach start on first event', function(done) {
+            var path = paths.getLayers()[0];
+            var m = L.marker([0, 0]);
+            handler.polylineHandles.fire('attach', {marker: m, layer: path});
+            assert.equal(handler._start, m);
+            done();
+        });
+
+        it('should attach end on second event', function(done) {
+            var path = paths.getLayers()[0];
+            handler.polylineHandles.fire('attach', {marker: L.marker([0, 0]), layer: path});
+            var m = L.marker([1, 1]);
+            handler.polylineHandles.fire('attach', {marker: m, layer: path});
+            assert.equal(handler._end, m);
+            done();
+        });
+
+        it('should compute when start and end are attached', function(done) {
+            var callback = sinon.spy();
+            handler.on('toporoute:begin', callback);
+            var path = paths.getLayers()[0];
+            handler.polylineHandles.fire('attach', {marker: L.marker([0, 0]), layer: path});
+            handler.polylineHandles.fire('attach', {marker: L.marker([1, 1]), layer: path});
+            assert.isTrue(callback.called);
+            done();
+        });
+
+        it('should cleanup when start or end are attached', function(done) {
+            var path = paths.getLayers()[0];
+            var start = L.marker([0, 0]);
+            var end = L.marker([1, 1]);
+            handler.polylineHandles.fire('attach', {marker: start, layer: path});
+            handler.polylineHandles.fire('attach', {marker: end, layer: path});
+            var callback = sinon.spy();
+            handler.on('toporoute:remove', callback);
+            start.fire('detach');
+            assert.isNull(handler._start);
+            end.fire('detach');
+            assert.isNull(handler._end);
+            assert.equal(2, callback.callCount);
             done();
         });
     });

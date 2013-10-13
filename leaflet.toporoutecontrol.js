@@ -153,9 +153,12 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         if (this._start) {
             this._start = null;
         }
+        this.fire('toporoute:remove', {layer: this._result});
     },
 
     _computeRoute: function () {
+        this.fire('toporoute:begin');
+
         var layer = this._start.attached,
             startPos = locate.call(this, layer, this._start.getLatLng()),
             endPos =  locate.call(this, layer, this._end.getLatLng());
@@ -163,6 +166,7 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         var subcoords = L.GeometryUtil.extract(this._map, layer, startPos, endPos);
         this._result = L.polyline(subcoords, {color: 'red', opacity: 0.3});
         this._map.addLayer(this._result);
+        this.fire('toporoute:done', {layer: this._result});
 
         function locate(layer, latlng) {
             return L.GeometryUtil.locateOnLine(this._map, layer, latlng);
