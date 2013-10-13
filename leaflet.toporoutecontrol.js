@@ -85,6 +85,7 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
 
     initialize: function (map) {
         L.Handler.prototype.initialize.call(this, map);
+        this.polylineHandles = null;
         this._pathsLayer = null;
         this._result = null;
     },
@@ -93,10 +94,7 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         if (!this._pathsLayer)
             return;
 
-        this._pathsLayer.eachLayer(function (path) {
-            path.polylineHandles.enable();
-        }, this);
-
+        this.polylineHandles.enable();
         this._map.almostOver.enable();
     },
 
@@ -104,21 +102,23 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         if (!this._pathsLayer)
             return;
 
-        this._pathsLayer.eachLayer(function (path) {
-            path.polylineHandles.disable();
-        });
+        this.polylineHandles.disable();
     },
 
     setPathsLayer: function (pathsLayer) {
         this._pathsLayer = pathsLayer;
+        this.polylineHandles = pathsLayer.getLayers()[0].polylineHandles;
+        if ((pathsLayer.getLayers()).length > 0) {
+            this._onPathLoaded();
+        }
         this._pathsLayer.on('data:loaded', this._onPathLoaded, this);
     },
 
     _onPathLoaded: function () {
         this._map.almostOver.addLayer(this._pathsLayer);
 
-        var onePath = this._pathsLayer.getLayers()[0];
-        onePath.polylineHandles.addGuideLayer(this._pathsLayer);
+        this.polylineHandles.addGuideLayer(this._pathsLayer);
+        this.polylineHandles.on('attach', this._onAttached, this);
 
         this.fire('ready');
     },
