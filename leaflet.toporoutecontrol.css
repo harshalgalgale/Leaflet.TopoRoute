@@ -1,0 +1,31 @@
+.marker-source {
+    padding-left: 25px;
+    padding-top: 41px;
+    margin-left: -12px !important;
+    margin-top: -41px !important;
+    background-repeat: no-repeat;
+    height: 0px !important;
+    width: 0px !important;
+
+    background-image: url('images/marker-source.png');
+}
+
+.marker-target {
+    padding-left: 25px;
+    padding-top: 41px;
+    margin-left: -12px !important;
+    margin-top: -41px !important;
+    background-repeat: no-repeat;
+    height: 0px !important;
+    width: 0px !important;
+
+    background-image: url('images/marker-target.png');
+}
+
+.marker-source.marker-snapped {
+    background-image: url('images/marker-source-snap.png');
+}
+
+.marker-target.marker-snapped {
+    background-image: url('images/marker-target-snap.png');
+}
