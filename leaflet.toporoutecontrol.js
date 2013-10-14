@@ -87,7 +87,9 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         L.Handler.prototype.initialize.call(this, map);
         this.polylineHandles = null;
         this._pathsLayer = null;
-        this._result = null;
+        this._start = null;
+        this._end = null;
+        this._vias = [];
     },
 
     addHooks: function () {
@@ -107,7 +109,6 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
 
     setPathsLayer: function (pathsLayer) {
         this._pathsLayer = pathsLayer;
-        this.polylineHandles = pathsLayer.getLayers()[0].polylineHandles;
         if ((pathsLayer.getLayers()).length > 0) {
             this._onPathLoaded();
         }
@@ -117,6 +118,7 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
     _onPathLoaded: function () {
         this._map.almostOver.addLayer(this._pathsLayer);
 
+        this.polylineHandles = this._pathsLayer.getLayers()[0].polylineHandles;
         this.polylineHandles.addGuideLayer(this._pathsLayer);
         this.polylineHandles.on('attach', this._onAttached, this);
 
@@ -138,38 +140,41 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
             this._computeRoute();
         }
         else {
-            // Via
+            this._vias.push(marker);
+            this._computeRoute();
         }
     },
 
     _onDetached: function (e) {
-        if (this._result) {
-            this._map.removeLayer(this._result);
-            this._result = null;
-        }
-        if (this._end) {
+        if (this._end === e.marker) {
             this._end = null;
         }
-        if (this._start) {
+        else if (this._start === e.marker) {
             this._start = null;
         }
-        this.fire('toporoute:remove', {layer: this._result});
+        else {
+            // Remove from Via
+            var index = this._vias.indexOf(e.marker);
+            this._vias.splice(index, 1);
+        }
+        if (this._start && this._end)
+            this._computeRoute();
+        else
+            this.fire('toporoute:remove');
     },
 
     _computeRoute: function () {
-        this.fire('toporoute:begin');
-
-        var layer = this._start.attached,
-            startPos = locate.call(this, layer, this._start.getLatLng()),
-            endPos =  locate.call(this, layer, this._end.getLatLng());
-
-        var subcoords = L.GeometryUtil.extract(this._map, layer, startPos, endPos);
-        this._result = L.polyline(subcoords, {color: 'red', opacity: 0.3});
-        this._map.addLayer(this._result);
-        this.fire('toporoute:done', {layer: this._result});
-
-        function locate(layer, latlng) {
-            return L.GeometryUtil.locateOnLine(this._map, layer, latlng);
+        var data = {
+            start: {latlng: this._start.getLatLng(),
+                    layer: this._start.attached},
+            end: {latlng: this._end.getLatLng(),
+                  layer: this._end.attached},
+            via: []
+        };
+        for (var i=0, n=this._vias.length; i<n; i++) {
+            data.via.push({latlng: this._vias[i].getLatLng(),
+                           layer: this._vias[i].attached});
         }
+        this.fire('toporoute:compute', {data: data});
     }
 });

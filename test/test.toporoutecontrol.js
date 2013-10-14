@@ -195,7 +195,7 @@ describe('L.Handler.TopoRouteHandler', function() {
 
         it('should compute when start and end are attached', function(done) {
             var callback = sinon.spy();
-            handler.on('toporoute:begin', callback);
+            handler.on('toporoute:compute', callback);
             var path = paths.getLayers()[0];
             handler.polylineHandles.fire('attach', {marker: L.marker([0, 0]), layer: path});
             handler.polylineHandles.fire('attach', {marker: L.marker([1, 1]), layer: path});
@@ -203,7 +203,7 @@ describe('L.Handler.TopoRouteHandler', function() {
             done();
         });
 
-        it('should cleanup when start or end are attached', function(done) {
+        it('should remove when start or end are detached', function(done) {
             var path = paths.getLayers()[0];
             var start = L.marker([0, 0]);
             var end = L.marker([1, 1]);
@@ -211,11 +211,68 @@ describe('L.Handler.TopoRouteHandler', function() {
             handler.polylineHandles.fire('attach', {marker: end, layer: path});
             var callback = sinon.spy();
             handler.on('toporoute:remove', callback);
-            start.fire('detach');
+
+            start.fire('detach', {marker: L.marker([3.14, 0])});
+            start.fire('detach', {marker: handler._start});
             assert.isNull(handler._start);
-            end.fire('detach');
+            start.fire('detach', {marker: handler._end});
             assert.isNull(handler._end);
             assert.equal(2, callback.callCount);
+            done();
+        });
+
+        it('should compute when detached marker is not start or end', function(done) {
+            var path = paths.getLayers()[0];
+            var start = L.marker([0, 0]);
+            var end = L.marker([1, 1]);
+            handler.polylineHandles.fire('attach', {marker: start, layer: path});
+            handler.polylineHandles.fire('attach', {marker: end, layer: path});
+            var callback = sinon.spy();
+            handler.on('toporoute:compute', callback);
+            start.fire('detach', {marker: L.marker([3.14, 0])});
+            assert.isTrue(callback.called);
+            done();
+        });
+    });
+
+
+    describe('Data provided for compute event', function() {
+
+        var path,
+            start,
+            end;
+
+        beforeEach(function () {
+            path = paths.getLayers()[0];
+            start = L.marker([0, 0]);
+            end = L.marker([1, 1]);
+            handler.polylineHandles.fire('attach', {marker: start, layer: path});
+            handler.polylineHandles.fire('attach', {marker: end, layer: path});
+        });
+
+        it('should provide start, end and via points', function(done) {
+            var data;
+            var middle = L.marker([0.5, 0]);
+            handler.on('toporoute:compute', function (e) {data = e.data;});
+            handler.polylineHandles.fire('attach', {marker: middle, layer: path});
+            assert.equal(data.start.latlng, start.getLatLng());
+            assert.equal(data.start.layer, path);
+            assert.equal(data.end.latlng, end.getLatLng());
+            assert.equal(data.end.layer, path);
+            assert.equal(data.via.length, 1);
+            assert.equal(data.via[0].latlng, middle.getLatLng());
+            assert.equal(data.via[0].layer, path);
+            done();
+        });
+
+        it('should remove via markers if detached', function(done) {
+            var data;
+            var middle = L.marker([0.5, 0]);
+            handler.on('toporoute:compute', function (e) {data = e.data;});
+            handler.polylineHandles.fire('attach', {marker: middle, layer: path});
+            assert.equal(data.via.length, 1);
+            middle.fire('detach', {marker: middle});
+            assert.equal(data.via.length, 0);
             done();
         });
     });
