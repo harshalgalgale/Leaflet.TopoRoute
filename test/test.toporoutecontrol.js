@@ -213,9 +213,9 @@ describe('L.Handler.TopoRouteHandler', function() {
             handler.on('toporoute:remove', callback);
 
             start.fire('detach', {marker: L.marker([3.14, 0])});
-            start.fire('detach', {marker: handler._start});
+            handler.polylineHandles.fire('detach', {marker: handler._start});
             assert.isNull(handler._start);
-            start.fire('detach', {marker: handler._end});
+            handler.polylineHandles.fire('detach', {marker: handler._end});
             assert.isNull(handler._end);
             assert.equal(2, callback.callCount);
             done();
@@ -229,7 +229,7 @@ describe('L.Handler.TopoRouteHandler', function() {
             handler.polylineHandles.fire('attach', {marker: end, layer: path});
             var callback = sinon.spy();
             handler.on('toporoute:compute', callback);
-            start.fire('detach', {marker: L.marker([3.14, 0])});
+            handler.polylineHandles.fire('detach', {marker: L.marker([3.14, 0])});
             assert.isTrue(callback.called);
             done();
         });
@@ -271,7 +271,7 @@ describe('L.Handler.TopoRouteHandler', function() {
             handler.on('toporoute:compute', function (e) {data = e.data;});
             handler.polylineHandles.fire('attach', {marker: middle, layer: path});
             assert.equal(data.via.length, 1);
-            middle.fire('detach', {marker: middle});
+            handler.polylineHandles.fire('detach', {marker: middle});
             assert.equal(data.via.length, 0);
             done();
         });

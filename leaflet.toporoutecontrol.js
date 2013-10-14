@@ -121,19 +121,18 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         this.polylineHandles = this._pathsLayer.getLayers()[0].polylineHandles;
         this.polylineHandles.addGuideLayer(this._pathsLayer);
         this.polylineHandles.on('attach', this._onAttached, this);
+        this.polylineHandles.on('detach', this._onDetached, this);
         this.polylineHandles.options.markerFactory = this._getHandleMarker.bind(this);
 
         this.fire('ready');
     },
 
     _getHandleMarker: function (latlng) {
-        var className;
+        var className = 'handle-icon';
         if (!this._start)
             className = 'marker-source';
         else if (!this._end)
             className = 'marker-target';
-        else
-            className = 'handle-icon';
         var handleIcon = L.divIcon({className: className});
         return L.marker(latlng, {icon: handleIcon});
     },
@@ -143,7 +142,6 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
             latlng = marker.getLatLng();
 
         marker.attached = e.layer;
-        marker.on('detach', this._onDetached, this);
 
         if (!this._start) {
             this._start = marker;
