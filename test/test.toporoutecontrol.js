@@ -233,6 +233,17 @@ describe('L.Handler.TopoRouteHandler', function() {
             assert.isTrue(callback.called);
             done();
         });
+
+        it('should change cursor after adding start and end', function(done) {
+            handler.enable();
+            map.fire('almost:over', {latlng: [0, 0]});
+            handler.polylineHandles._marker.addTo(map).fire('click');
+            assert.match(handler._start._icon.className, /marker\-source/);
+            map.fire('almost:over', {latlng: [1, 0]});
+            handler.polylineHandles._marker.addTo(map).fire('click');
+            assert.match(handler._end._icon.className, /marker\-target/);
+            done();
+        });
     });
 
 
