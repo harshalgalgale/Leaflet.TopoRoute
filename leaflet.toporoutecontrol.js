@@ -163,6 +163,7 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         if (this._start && this._end) {
             this._computeRoute();
         }
+        this.polylineHandles.refreshMarker();
     },
 
     _onDetached: function (e) {
@@ -186,6 +187,7 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
                 this.polylineHandles.enable();
             }, this), 0);
         }
+        this.polylineHandles.refreshMarker();
     },
 
     _computeRoute: function () {
