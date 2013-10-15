@@ -43,14 +43,22 @@ L.Control.TopoRouteControl = L.Control.extend({
     initialize: function (options) {
         L.Control.prototype.initialize.call(this, options);
         this.handler = null;
+        this.router = null;
     },
 
     onAdd: function (map) {
         if (this._map.almostOver === undefined) {
             throw 'Leaflet.AlmostOver required.';
         }
+        this.router = new L.TopoRouter(map);
         this.handler = new L.Handler.TopoRouteHandler(map);
         this.handler.on('ready', this.activable, this);
+        this.handler.on('toporoute:remove', function (e) {
+            this.router.clean();
+        }, this);
+        this.handler.on('toporoute:compute', function (e) {
+            this.router.compute(e.data);
+        }, this);
         return this._initContainer();
     },
 
@@ -187,5 +195,30 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
                            layer: this._vias[i].attached});
         }
         this.fire('toporoute:compute', {data: data});
+    }
+});
+
+
+L.TopoRouter = L.Class.extend({
+    initialize: function (map) {
+        this._map = map;
+        this._result = null;
+    },
+
+    compute: function (data) {
+        this.clean();
+
+        var latlngs = [];
+        latlngs.push(data.start.latlng);
+        for (var i=0, n=data.via.length; i<n; i++)
+            latlngs.push(data.via[i].latlng);
+        latlngs.push(data.end.latlng);
+
+        this._result = L.polyline(latlngs).addTo(this._map);
+    },
+
+    clean: function () {
+        if (this._result)
+            this._map.removeLayer(this._result);
     }
 });
