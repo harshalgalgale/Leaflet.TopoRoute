@@ -156,10 +156,11 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         }
         else if (!this._end) {
             this._end = marker;
-            this._computeRoute();
         }
         else {
             this._vias.push(marker);
+        }
+        if (this._start && this._end) {
             this._computeRoute();
         }
     },
@@ -176,10 +177,15 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
             var index = this._vias.indexOf(e.marker);
             this._vias.splice(index, 1);
         }
-        if (this._start && this._end)
+        if (this._start && this._end) {
             this._computeRoute();
-        else
+        }
+        else {
             this.fire('toporoute:remove');
+            setTimeout(L.Util.bind(function() {
+                this.polylineHandles.enable();
+            }, this), 0);
+        }
     },
 
     _computeRoute: function () {
@@ -195,6 +201,9 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
                            layer: this._vias[i].attached});
         }
         this.fire('toporoute:compute', {data: data});
+        setTimeout(L.Util.bind(function() {
+            this.polylineHandles.disable();
+        }, this), 0);
     }
 });
 
