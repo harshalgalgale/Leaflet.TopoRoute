@@ -53,11 +53,11 @@ L.Control.TopoRouteControl = L.Control.extend({
         this.router = new L.TopoRouter(map);
         this.handler = new L.Handler.TopoRouteHandler(map);
         this.handler.on('ready', this.activable, this);
-        this.handler.on('toporoute:remove', function (e) {
-            this.router.clean();
-        }, this);
         this.handler.on('toporoute:compute', function (e) {
             this.router.compute(e.data);
+        }, this);
+        this.router.on('computed', function (e) {
+            this.handler.setResult(e.data);
         }, this);
         return this._initContainer();
     },
@@ -178,16 +178,13 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
             var index = this._vias.indexOf(e.marker);
             this._vias.splice(index, 1);
         }
+        this.polylineHandles.refreshMarker();
         if (this._start && this._end) {
             this._computeRoute();
         }
         else {
-            this.fire('toporoute:remove');
-            setTimeout(L.Util.bind(function() {
-                this.polylineHandles.enable();
-            }, this), 0);
+            this.setResult(null);
         }
-        this.polylineHandles.refreshMarker();
     },
 
     _computeRoute: function () {
@@ -203,33 +200,41 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
                            layer: this._vias[i].attached});
         }
         this.fire('toporoute:compute', {data: data});
-        setTimeout(L.Util.bind(function() {
-            this.polylineHandles.disable();
-        }, this), 0);
-    }
+        //setTimeout(L.Util.bind(function() {
+            
+        //}, this), 0);
+    },
+
+    setResult: function (data) {
+        if (!data) {
+            if (this._result)
+                this._map.removeLayer(this._result);
+            this.polylineHandles.enable();
+            return;
+        }
+
+        this.polylineHandles.disable();
+        this._result = data.layer;
+        this._result.addTo(this._map);
+    },
 });
 
 
 L.TopoRouter = L.Class.extend({
-    initialize: function (map) {
-        this._map = map;
-        this._result = null;
-    },
+
+    includes: L.Mixin.Events,
 
     compute: function (data) {
-        this.clean();
-
         var latlngs = [];
         latlngs.push(data.start.latlng);
         for (var i=0, n=data.via.length; i<n; i++)
             latlngs.push(data.via[i].latlng);
         latlngs.push(data.end.latlng);
 
-        this._result = L.polyline(latlngs).addTo(this._map);
-    },
-
-    clean: function () {
-        if (this._result)
-            this._map.removeLayer(this._result);
+        setTimeout(L.Util.bind(function() {
+            this.fire('computed', {data: {
+                layer: L.polyline(latlngs)
+            }})
+        }, this), 300);
     }
 });
