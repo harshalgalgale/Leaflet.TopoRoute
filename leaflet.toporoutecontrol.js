@@ -55,9 +55,11 @@ L.Control.TopoRouteControl = L.Control.extend({
         this.handler.on('ready', this.activable, this);
         this.handler.on('toporoute:compute', function (e) {
             this.router.compute(e.data);
+            this._map.spin(true);
         }, this);
         this.router.on('computed', function (e) {
             this.handler.setResult(e.data);
+            this._map.spin(false);
         }, this);
         return this._initContainer();
     },
