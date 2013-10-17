@@ -214,6 +214,13 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         if (data) {
             this._result = data.layer;
             this._result.addTo(this._map);
+            this._result.setStyle({weight: 8,
+                                   opacity: 0.8,
+                                   color: 'yellow'})
+            this._result.setText(' ► ', {repeat: true,
+                                         offset: 4,
+                                         attributes: {'font-size': '12',
+                                                      fill: 'orange'}});
 
             this._map.almostOver.removeLayer(this._pathsLayer);
             this._map.almostOver.addLayer(this._result);
