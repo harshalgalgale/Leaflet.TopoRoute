@@ -178,13 +178,13 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
             var index = this._vias.indexOf(e.marker);
             this._vias.splice(index, 1);
         }
-        this.polylineHandles.refreshMarker();
         if (this._start && this._end) {
             this._computeRoute();
         }
         else {
             this.setResult(null);
         }
+        this.polylineHandles.refreshMarker();
     },
 
     _computeRoute: function () {
@@ -200,22 +200,25 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
                            layer: this._vias[i].attached});
         }
         this.fire('toporoute:compute', {data: data});
-        //setTimeout(L.Util.bind(function() {
-            
-        //}, this), 0);
     },
 
     setResult: function (data) {
-        if (!data) {
-            if (this._result)
-                this._map.removeLayer(this._result);
+        if (this._result) {
+            this._map.almostOver.removeLayer(this._result);
+            this._map.removeLayer(this._result);
             this.polylineHandles.enable();
-            return;
         }
 
-        this.polylineHandles.disable();
-        this._result = data.layer;
-        this._result.addTo(this._map);
+        if (data) {
+            this._result = data.layer;
+            this._result.addTo(this._map);
+
+            this._map.almostOver.removeLayer(this._pathsLayer);
+            this._map.almostOver.addLayer(this._result);
+        }
+        else {
+            this._map.almostOver.addLayer(this._pathsLayer);
+        }
     },
 });
 
