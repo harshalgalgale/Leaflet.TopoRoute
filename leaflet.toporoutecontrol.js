@@ -216,7 +216,7 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
             this._result.addTo(this._map);
             this._result.setStyle({weight: 8,
                                    opacity: 0.8,
-                                   color: 'yellow'})
+                                   color: 'yellow'});
             this._result.setText(' ► ', {repeat: true,
                                          offset: 4,
                                          attributes: {'font-size': '12',
