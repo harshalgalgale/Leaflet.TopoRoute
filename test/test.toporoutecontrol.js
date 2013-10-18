@@ -203,21 +203,22 @@ describe('L.Handler.TopoRouteHandler', function() {
             done();
         });
 
-        it('should remove when start or end are detached', function(done) {
+        it('should set null result when start or end are detached', function(done) {
             var path = paths.getLayers()[0];
             var start = L.marker([0, 0]);
             var end = L.marker([1, 1]);
             handler.polylineHandles.fire('attach', {marker: start, layer: path});
             handler.polylineHandles.fire('attach', {marker: end, layer: path});
-            var callback = sinon.spy();
-            handler.on('toporoute:remove', callback);
 
-            start.fire('detach', {marker: L.marker([3.14, 0])});
+            var stub = sinon.stub(handler, "setResult");
+
             handler.polylineHandles.fire('detach', {marker: handler._start});
             assert.isNull(handler._start);
+            assert.isTrue(stub.calledWithExactly(null));
             handler.polylineHandles.fire('detach', {marker: handler._end});
             assert.isNull(handler._end);
-            assert.equal(2, callback.callCount);
+            assert.equal(2, stub.callCount);
+
             done();
         });
 
