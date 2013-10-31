@@ -204,12 +204,19 @@ describe('L.Handler.TopoRouteHandler', function() {
         });
 
         it('should change cursor after adding start and end', function(done) {
+            var path = paths.getLayers()[0];
             handler.enable();
+
             map.fire('almost:over', {latlng: [0, 0]});
-            handler.polylineHandles._marker.addTo(map).fire('click');
+            var start = handler.polylineHandles._marker.addTo(map);
+            start.from = path;
+            start.fire('click');
             assert.match(handler._start._icon.className, /marker\-source/);
+
             map.fire('almost:over', {latlng: [1, 0]});
-            handler.polylineHandles._marker.addTo(map).fire('click');
+            var end = handler.polylineHandles._marker.addTo(map);
+            end.from = path;
+            end.fire('click');
             assert.match(handler._end._icon.className, /marker\-target/);
             done();
         });
@@ -258,37 +265,6 @@ describe('L.Handler.TopoRouteHandler', function() {
     });
 
 
-    describe('Result received', function() {
-
-        beforeEach(function() {
-            handler.setResult({ layer: L.polyline([[20, 20], [20, 30]]) });
-        });
-
-        it('should add layer to the map', function(done) {
-            assert.isTrue(map.hasLayer(handler._result));
-            handler.setResult(null);
-            assert.isFalse(map.hasLayer(handler._result));
-            done();
-        });
-
-        it('should enable almost:over on result layer', function(done) {
-            var callback = sinon.spy();
-            map.on('almost:move', callback);
-            map.fire('mousemovesample', {latlng: [10, 10]});
-            assert.isTrue(callback.called);
-            done();
-        });
-
-        it('should disable attach on click', function(done) {
-            done();
-        });
-
-        it('should disable almost:over on paths layer', function(done) {
-            done();
-        });
-    });
-
-
     describe('Data provided for compute event', function() {
 
         var path,
@@ -326,6 +302,37 @@ describe('L.Handler.TopoRouteHandler', function() {
             assert.equal(data.via.length, 1);
             handler.polylineHandles.fire('detach', {marker: middle});
             assert.equal(data.via.length, 0);
+            done();
+        });
+    });
+
+
+    describe('Result received', function() {
+
+        beforeEach(function() {
+            handler.setResult({ layers: [L.polyline([[20, 20], [20, 30]])] });
+        });
+
+        it('should add layer to the map', function(done) {
+            assert.isTrue(map.hasLayer(handler._result));
+            handler.setResult(null);
+            assert.isFalse(map.hasLayer(handler._result));
+            done();
+        });
+
+        it('should enable almost:over on result layer', function(done) {
+            var callback = sinon.spy();
+            map.on('almost:move', callback);
+            map.fire('mousemovesample', {latlng: [10, 10]});
+            assert.isTrue(callback.called);
+            done();
+        });
+
+        it('should disable attach on click', function(done) {
+            done();
+        });
+
+        it('should disable almost:over on paths layer', function(done) {
             done();
         });
     });

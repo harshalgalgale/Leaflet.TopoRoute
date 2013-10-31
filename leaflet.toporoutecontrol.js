@@ -160,7 +160,8 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
             this._end = marker;
         }
         else {
-            this._vias.push(marker);
+            // Add to Vias using result route index
+            this._vias.splice(marker.index, 0, marker);
         }
         if (this._start && this._end) {
             this._computeRoute();
@@ -212,12 +213,22 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         }
 
         if (data) {
-            this._result = data.layer;
-            this._result.addTo(this._map);
-
             this._map.almostOver.removeLayer(this._pathsLayer);
-            this._map.almostOver.addLayer(this._result);
             this.polylineHandles.options.attachOnClick = false;
+
+            this._result = L.featureGroup();
+            this._result.addTo(this._map);
+            for (var i=0; i<data.layers.length; i++) {
+                var route = data.layers[i];
+                this._result.addLayer(route);
+                this._map.almostOver.addLayer(route);
+                // Keep route index to insert via step
+                route.on('grab', (function (index) {
+                    return function (e) {
+                        e.marker.index = index;
+                    };
+                })(i));
+            }
 
             // Apparence
             this._result.setStyle({weight: 8,
@@ -244,15 +255,25 @@ L.TopoRouter = L.Class.extend({
     includes: L.Mixin.Events,
 
     compute: function (data) {
-        var latlngs = [];
-        latlngs.push(data.start.latlng);
-        for (var i=0, n=data.via.length; i<n; i++)
-            latlngs.push(data.via[i].latlng);
-        latlngs.push(data.end.latlng);
+        var layers = [];
+        if (data.via.length === 0) {
+            layers.push(L.polyline([data.start.latlng,
+                                    data.end.latlng]));
+        }
+        else {
+            layers.push(L.polyline([data.start.latlng,
+                                    data.via[0].latlng]));
+            for (var i=0, n=data.via.length-1; i<n; i++) {
+                layers.push(L.polyline([data.via[i].latlng,
+                                        data.via[i+1].latlng]));
+            }
+            layers.push(L.polyline([data.via[data.via.length-1].latlng,
+                                    data.end.latlng]));
+        }
 
         setTimeout(L.Util.bind(function() {
             this.fire('computed', {data: {
-                layer: L.polyline(latlngs)
+                layers: layers
             }})
         }, this), 300);
     }
