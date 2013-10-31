@@ -203,38 +203,6 @@ describe('L.Handler.TopoRouteHandler', function() {
             done();
         });
 
-        it('should set null result when start or end are detached', function(done) {
-            var path = paths.getLayers()[0];
-            var start = L.marker([0, 0]);
-            var end = L.marker([1, 1]);
-            handler.polylineHandles.fire('attach', {marker: start, layer: path});
-            handler.polylineHandles.fire('attach', {marker: end, layer: path});
-
-            var stub = sinon.stub(handler, "setResult");
-
-            handler.polylineHandles.fire('detach', {marker: handler._start});
-            assert.isNull(handler._start);
-            assert.isTrue(stub.calledWithExactly(null));
-            handler.polylineHandles.fire('detach', {marker: handler._end});
-            assert.isNull(handler._end);
-            assert.equal(2, stub.callCount);
-
-            done();
-        });
-
-        it('should compute when detached marker is not start or end', function(done) {
-            var path = paths.getLayers()[0];
-            var start = L.marker([0, 0]);
-            var end = L.marker([1, 1]);
-            handler.polylineHandles.fire('attach', {marker: start, layer: path});
-            handler.polylineHandles.fire('attach', {marker: end, layer: path});
-            var callback = sinon.spy();
-            handler.on('toporoute:compute', callback);
-            handler.polylineHandles.fire('detach', {marker: L.marker([3.14, 0])});
-            assert.isTrue(callback.called);
-            done();
-        });
-
         it('should change cursor after adding start and end', function(done) {
             handler.enable();
             map.fire('almost:over', {latlng: [0, 0]});
@@ -243,6 +211,79 @@ describe('L.Handler.TopoRouteHandler', function() {
             map.fire('almost:over', {latlng: [1, 0]});
             handler.polylineHandles._marker.addTo(map).fire('click');
             assert.match(handler._end._icon.className, /marker\-target/);
+            done();
+        });
+    });
+
+
+    describe('Detaching starting and end', function() {
+
+        var path,
+            start,
+            end;
+
+        beforeEach(function () {
+            path = paths.getLayers()[0];
+            start = L.marker([0, 0]);
+            end = L.marker([1, 1]);
+            handler.polylineHandles.fire('attach', {marker: start, layer: path});
+            handler.polylineHandles.fire('attach', {marker: end, layer: path});
+        });
+
+        it('should set null result', function(done) {
+            var stub = sinon.stub(handler, "setResult");
+            handler.polylineHandles.fire('detach', {marker: handler._start});
+            assert.isNull(handler._start);
+            assert.isTrue(stub.calledWithExactly(null));
+            handler.polylineHandles.fire('detach', {marker: handler._end});
+            assert.isNull(handler._end);
+            assert.equal(2, stub.callCount);
+            done();
+        });
+
+        it('should remove result layer', function(done) {
+            handler._result = L.geoJson(null).addTo(map);
+            handler.polylineHandles.fire('detach', {marker: handler._start});
+            assert.isNull(handler._result);
+            done();
+        });
+
+        it('should compute when detached marker is not start or end', function(done) {
+            var callback = sinon.spy();
+            handler.on('toporoute:compute', callback);
+            handler.polylineHandles.fire('detach', {marker: L.marker([3.14, 0])});
+            assert.isTrue(callback.called);
+            done();
+        });
+    });
+
+
+    describe('Result received', function() {
+
+        beforeEach(function() {
+            handler.setResult({ layer: L.polyline([[20, 20], [20, 30]]) });
+        });
+
+        it('should add layer to the map', function(done) {
+            assert.isTrue(map.hasLayer(handler._result));
+            handler.setResult(null);
+            assert.isFalse(map.hasLayer(handler._result));
+            done();
+        });
+
+        it('should enable almost:over on result layer', function(done) {
+            var callback = sinon.spy();
+            map.on('almost:move', callback);
+            map.fire('mousemovesample', {latlng: [10, 10]});
+            assert.isTrue(callback.called);
+            done();
+        });
+
+        it('should disable attach on click', function(done) {
+            done();
+        });
+
+        it('should disable almost:over on paths layer', function(done) {
             done();
         });
     });

@@ -208,25 +208,32 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         if (this._result) {
             this._map.almostOver.removeLayer(this._result);
             this._map.removeLayer(this._result);
-            this.polylineHandles.enable();
+            this._result = null;
         }
 
         if (data) {
             this._result = data.layer;
             this._result.addTo(this._map);
-            this._result.setStyle({weight: 8,
-                                   opacity: 0.8,
-                                   color: 'yellow'});
-            this._result.setText(' ► ', {repeat: true,
-                                         offset: 4,
-                                         attributes: {'font-size': '12',
-                                                      fill: 'orange'}});
 
             this._map.almostOver.removeLayer(this._pathsLayer);
             this._map.almostOver.addLayer(this._result);
+            this.polylineHandles.options.attachOnClick = false;
+
+            // Apparence
+            this._result.setStyle({weight: 8,
+                                   opacity: 0.7,
+                                   color: 'yellow'});
+            if (typeof this._result.setText == 'function') {
+                this._result.setText(' ► ', {repeat: true,
+                                             offset: 4,
+                                             attributes: {'font-size': '12',
+                                                          'fill-opacity': '0.5',
+                                                          'fill': 'orange'}});
+            }
         }
         else {
             this._map.almostOver.addLayer(this._pathsLayer);
+            this.polylineHandles.options.attachOnClick = true;
         }
     },
 });
