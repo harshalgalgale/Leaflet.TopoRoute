@@ -28,3 +28,6 @@
 [submodule "Leaflet.TextPath"]
 	path = Leaflet.TextPath
 	url = https://github.com/makinacorpus/Leaflet.TextPath.git
+[submodule "dijkstra"]
+	path = dijkstra
+	url = https://github.com/andrewhayward/dijkstra.git
