@@ -254,27 +254,89 @@ L.TopoRouter = L.Class.extend({
 
     includes: L.Mixin.Events,
 
-    compute: function (data) {
-        var layers = [];
-        if (data.via.length === 0) {
-            layers.push(L.polyline([data.start.latlng,
-                                    data.end.latlng]));
-        }
-        else {
-            layers.push(L.polyline([data.start.latlng,
-                                    data.via[0].latlng]));
-            for (var i=0, n=data.via.length-1; i<n; i++) {
-                layers.push(L.polyline([data.via[i].latlng,
-                                        data.via[i+1].latlng]));
+    initialize: function () {
+        this._graph = null;
+        this._data = null;
+        this._layerById = null;
+    },
+
+    setGraph: function (data, layerById) {
+        this._data = data;
+        this._layerById = layerById;
+
+        var input = {};
+        for (var node in data.nodes) {
+            input[node] = {};
+            var dests = data.nodes[node];
+            for (var dest in dests) {
+                var edgeid = data.nodes[node][dest],
+                    edge = data.edges[edgeid];
+                input[node][dest] = edge.length;
             }
-            layers.push(L.polyline([data.via[data.via.length-1].latlng,
-                                    data.end.latlng]));
+        }
+        this._graph = new Graph(input);
+    },
+
+    _getEdge: function (a, b) {
+        var edgeid = this._data.nodes[a][b];
+        return this._data.edges[edgeid];
+    },
+
+    _getNode: function (edge) {
+        // temp
+        for (var node in this._data.nodes) {
+            for (var dest in this._data.nodes[node]) {
+                var edgeid = this._data.nodes[node][dest];
+                if (edge === edgeid) {
+                    return node;
+                }
+            }
+        }
+    },
+
+    shortestPath: function (start, end) {
+        var startnode = this._getNode(start.layer.id),
+            endnode = this._getNode(end.layer.id),
+            nodes = this._graph.findShortestPath(startnode, endnode);
+
+        var edges = [];
+        for (var i=0; i<nodes.length-1; i++) {
+            edges.push(this._getEdge(nodes[i], nodes[i+1]))
         }
 
+        var latlngs = [];
+        for (var i=0; i<edges.length; i++) {
+            var layer = this._layerById(edges[i].id);
+            latlngs = latlngs.concat(layer.getLatLngs());
+        }
+
+        return {
+            'nodes': nodes,
+            'layer': L.polyline(latlngs)
+        };
+    },
+
+    compute: function (data) {
         setTimeout(L.Util.bind(function() {
+            var layers = [];
+            if (data.via.length === 0) {
+                var shortest = this.shortestPath(data.start, data.end);
+                layers.push(shortest.layer);
+            }
+            else {
+                var shortest = this.shortestPath(data.start, data.via[0]);
+                layers.push(shortest.layer);
+                for (var i=0, n=data.via.length-1; i<n; i++) {
+                    shortest = this.shortestPath(data.via[i], data.via[i++]);
+                    layers.push(shortest.layer);
+                }
+                shortest = this.shortestPath(data.via[data.via.length-1], data.end);
+                layers.push(shortest.layer);
+            }
+
             this.fire('computed', {data: {
                 layers: layers
             }})
-        }, this), 300);
+        }, this), 0);
     }
 });
