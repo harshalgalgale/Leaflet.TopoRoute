@@ -277,6 +277,7 @@ L.TopoRouter = L.Class.extend({
 
     compute: function (start, end, vias) {
         var layers = [];
+        vias = vias || [];
         if (vias.length === 0) {
             var shortest = this._shortestPath(start, end);
             layers.push(shortest.layer);
