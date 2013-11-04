@@ -97,6 +97,7 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         L.Handler.prototype.initialize.call(this, map);
         this.polylineHandles = null;
         this._pathsLayer = null;
+        this._idToLayer = null;
         this._start = null;
         this._end = null;
         this._vias = [];
@@ -117,7 +118,8 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         this.polylineHandles.disable();
     },
 
-    setPathsLayer: function (pathsLayer) {
+    setPathsLayer: function (pathsLayer, idToLayer) {
+        this._idToLayer = idToLayer;
         this._pathsLayer = pathsLayer;
         if ((pathsLayer.getLayers()).length > 0) {
             this._onPathLoaded();
@@ -206,7 +208,9 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
     },
 
     _getRoute: function (shortest) {
-        return L.Util.TopoRoute.toGeometry(shortest);
+        return L.Util.TopoRoute.toGeometry(shortest,
+                                           this._map,
+                                           this._idToLayer);
     },
 
     setResult: function (result) {
@@ -338,6 +342,15 @@ L.Util.TopoRoute.shortestPath = function (start, end, edges) {
             paths: edges};
 };
 
-L.Util.TopoRoute.toGeometry = function (shortest) {
-    return null;
+L.Util.TopoRoute.toGeometry = function (shortest, map, idToLayer) {
+    var latlngs = [];
+    for (var i=0; i<shortest.paths.length; i++) {
+        var polyline = idToLayer(shortest.paths[i]),
+            pos = shortest.positions[i] || [0, 1];
+
+        var subline = L.GeometryUtil.extract(map, polyline, pos[0], pos[1]);
+        latlngs = latlngs.concat(subline);
+    }
+    console.assert(latlngs.length > 2);
+    return L.polyline(latlngs);
 };
