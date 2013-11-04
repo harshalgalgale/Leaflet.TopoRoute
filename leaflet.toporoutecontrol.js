@@ -205,6 +205,10 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         this.fire('toporoute:compute', data);
     },
 
+    _getRoute: function (shortest) {
+        return null;
+    },
+
     setResult: function (result) {
         if (this._result) {
             this._map.almostOver.removeLayer(this._result);
@@ -218,8 +222,8 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
 
             this._result = L.featureGroup();
             this._result.addTo(this._map);
-            for (var i=0; i<result.layers.length; i++) {
-                var route = result.layers[i];
+            for (var i=0; i<result.length; i++) {
+                var route = this._getRoute(result[i]);
                 this._result.addLayer(route);
                 this._map.almostOver.addLayer(route);
                 // Keep route index to insert via step
@@ -276,31 +280,52 @@ L.TopoRouter = L.Class.extend({
     },
 
     compute: function (start, end, vias) {
-        var layers = [];
+        var result = [];
         vias = vias || [];
         if (vias.length === 0) {
             var shortest = this._shortestPath(start, end);
-            layers.push(shortest.layer);
+            result.push(shortest);
         }
         else {
             var shortest = this._shortestPath(start, vias[0]);
-            layers.push(shortest.layer);
+            result.push(shortest);
             for (var i=0, n=vias.length-1; i<n; i++) {
                 shortest = this._shortestPath(vias[i], vias[i++]);
-                layers.push(shortest.layer);
+                result.push(shortest);
             }
             shortest = this._shortestPath(vias[vias.length-1], end);
-            layers.push(shortest.layer);
+            result.push(shortest);
         }
-
-        var result = {
-            layers: layers
-        };
         this.fire('computed', {result: result});
         return result;
     },
 
     _shortestPath: function (start, end) {
-        return {layer: null};
+        var startnode = this._getNode(start.id),
+            endnode = this._getNode(end.id),
+            nodes = this._graph.findShortestPath(startnode, endnode);
+
+        var edges = [];
+        for (var i=0; i<nodes.length-1; i++) {
+            edges.push(this._getEdge(nodes[i], nodes[i+1]))
+        }
+
+        return {edges: edges};
+    },
+
+    _getEdge: function (a, b) {
+        var edgeid = this._data.nodes[a][b];
+        return edgeid;
+    },
+
+    _getNode: function (edge) {
+        for (var node in this._data.nodes) {
+            for (var dest in this._data.nodes[node]) {
+                var edgeid = this._data.nodes[node][dest];
+                if (edge == edgeid) {
+                    return node;
+                }
+            }
+        }
     }
 });
