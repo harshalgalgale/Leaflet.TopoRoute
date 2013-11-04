@@ -282,26 +282,26 @@ describe('L.Handler.TopoRouteHandler', function() {
         it('should provide start, end and via points', function(done) {
             var data;
             var middle = L.marker([0.5, 0]);
-            handler.on('toporoute:compute', function (e) {data = e.data;});
+            handler.on('toporoute:compute', function (e) {data = e;});
             handler.polylineHandles.fire('attach', {marker: middle, layer: path});
             assert.equal(data.start.latlng, start.getLatLng());
             assert.equal(data.start.layer, path);
             assert.equal(data.end.latlng, end.getLatLng());
             assert.equal(data.end.layer, path);
-            assert.equal(data.via.length, 1);
-            assert.equal(data.via[0].latlng, middle.getLatLng());
-            assert.equal(data.via[0].layer, path);
+            assert.equal(data.vias.length, 1);
+            assert.equal(data.vias[0].latlng, middle.getLatLng());
+            assert.equal(data.vias[0].layer, path);
             done();
         });
 
         it('should remove via markers if detached', function(done) {
             var data;
             var middle = L.marker([0.5, 0]);
-            handler.on('toporoute:compute', function (e) {data = e.data;});
+            handler.on('toporoute:compute', function (e) {data = e;});
             handler.polylineHandles.fire('attach', {marker: middle, layer: path});
-            assert.equal(data.via.length, 1);
+            assert.equal(data.vias.length, 1);
             handler.polylineHandles.fire('detach', {marker: middle});
-            assert.equal(data.via.length, 0);
+            assert.equal(data.vias.length, 0);
             done();
         });
     });

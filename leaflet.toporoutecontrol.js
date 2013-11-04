@@ -54,7 +54,7 @@ L.Control.TopoRouteControl = L.Control.extend({
         this.handler = new L.Handler.TopoRouteHandler(map);
         this.handler.on('ready', this.activable, this);
         this.handler.on('toporoute:compute', function (e) {
-            this.router.compute(e.data);
+            this.router.compute(e.start, e.end, e.vias);
             this._map.spin(true);
         }, this);
         this.router.on('computed', function (e) {
@@ -196,13 +196,13 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
                     layer: this._start.attached},
             end: {latlng: this._end.getLatLng(),
                   layer: this._end.attached},
-            via: []
+            vias: []
         };
         for (var i=0, n=this._vias.length; i<n; i++) {
-            data.via.push({latlng: this._vias[i].getLatLng(),
-                           layer: this._vias[i].attached});
+            data.vias.push({latlng: this._vias[i].getLatLng(),
+                            layer: this._vias[i].attached});
         }
-        this.fire('toporoute:compute', {data: data});
+        this.fire('toporoute:compute', data);
     },
 
     setResult: function (result) {
@@ -275,27 +275,31 @@ L.TopoRouter = L.Class.extend({
         this._graph = new Graph(input);
     },
 
-    compute: function (data) {
+    compute: function (start, end, vias) {
         var layers = [];
-        if (data.via.length === 0) {
-            layers.push(L.polyline([data.start.latlng,
-                                    data.end.latlng]));
+        if (vias.length === 0) {
+            var shortest = this._shortestPath(start, end);
+            layers.push(shortest.layer);
         }
         else {
-            layers.push(L.polyline([data.start.latlng,
-                                    data.via[0].latlng]));
-            for (var i=0, n=data.via.length-1; i<n; i++) {
-                layers.push(L.polyline([data.via[i].latlng,
-                                        data.via[i+1].latlng]));
+            var shortest = this._shortestPath(start, vias[0]);
+            layers.push(shortest.layer);
+            for (var i=0, n=vias.length-1; i<n; i++) {
+                shortest = this._shortestPath(vias[i], vias[i++]);
+                layers.push(shortest.layer);
             }
-            layers.push(L.polyline([data.via[data.via.length-1].latlng,
-                                    data.end.latlng]));
+            shortest = this._shortestPath(vias[vias.length-1], end);
+            layers.push(shortest.layer);
         }
 
-        setTimeout(L.Util.bind(function() {
-            this.fire('computed', {data: {
-                layers: layers
-            }})
-        }, this), 300);
+        var result = {
+            layers: layers
+        };
+        this.fire('computed', {result: result});
+        return result;
+    },
+
+    _shortestPath: function (start, end) {
+        return {layer: null};
     }
 });
