@@ -254,6 +254,27 @@ L.TopoRouter = L.Class.extend({
 
     includes: L.Mixin.Events,
 
+    initialize: function () {
+        this._graph = null;
+        this._data = null;
+    },
+
+    setGraph: function (data) {
+        this._data = data;
+
+        var input = {};
+        for (var node in data.nodes) {
+            input[node] = {};
+            var dests = data.nodes[node];
+            for (var dest in dests) {
+                var edgeid = data.nodes[node][dest],
+                    edge = data.edges[edgeid];
+                input[node][dest] = edge.length;
+            }
+        }
+        this._graph = new Graph(input);
+    },
+
     compute: function (data) {
         var layers = [];
         if (data.via.length === 0) {

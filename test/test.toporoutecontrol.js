@@ -338,3 +338,27 @@ describe('L.Handler.TopoRouteHandler', function() {
     });
 
 });
+
+
+describe('L.TopoRouter', function() {
+
+    describe('Setting graph', function() {
+
+        var router = new L.TopoRouter();
+
+        it('should initialize internal graph', function(done) {
+            var data = {
+                nodes: {'1': {'2': 100}, '2': {'1': 101}},
+                edges: {'100': {length: 3.14}, '101': {length: 1.414}}
+            };
+            router.setGraph(data);
+            assert.isNotNull(router._graph);
+            assert.isNotNull(router._data);
+
+            assert.deepEqual(router._graph.map, {'1': {'2': 3.14},
+                                                 '2': {'1': 1.414}});
+            done();
+        });
+    });
+
+});
