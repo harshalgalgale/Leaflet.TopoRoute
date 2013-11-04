@@ -206,7 +206,7 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
     },
 
     _getRoute: function (shortest) {
-        return null;
+        return L.Util.TopoRoute.toGeometry(shortest);
     },
 
     setResult: function (result) {
@@ -307,10 +307,10 @@ L.TopoRouter = L.Class.extend({
 
         var edges = [];
         for (var i=0; i<nodes.length-1; i++) {
-            edges.push(this._getEdge(nodes[i], nodes[i+1]))
+            edges.push(this._getEdge(nodes[i], nodes[i+1]));
         }
 
-        return {edges: edges};
+        return L.Util.TopoRoute.shortestPath(start, end, edges);
     },
 
     _getEdge: function (a, b) {
@@ -329,3 +329,15 @@ L.TopoRouter = L.Class.extend({
         }
     }
 });
+
+
+L.Util.TopoRoute = {};
+
+L.Util.TopoRoute.shortestPath = function (start, end, edges) {
+    return {positions: {},
+            paths: edges};
+};
+
+L.Util.TopoRoute.toGeometry = function (shortest) {
+    return null;
+};

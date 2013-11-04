@@ -35,15 +35,20 @@ describe('L.TopoRouter', function() {
 
         it('should result single layer if no vias', function(done) {
             var result = router.compute({id: 100}, {id: 101});
-            assert.deepEqual(result, [{edges: [100]}]);
+            assert.deepEqual(result, [{positions: {},
+                                       paths: [100]}]);
             var result = router.compute({id: 101}, {id: 100});
-            assert.deepEqual(result, [{edges: [101]}]);
+            assert.deepEqual(result, [{positions: {},
+                                       paths: [101]}]);
             done();
         });
 
         it('should as many paths as vias', function(done) {
             var result = router.compute(100, 101, [100]);
-            assert.deepEqual(result, [{edges: []}, {edges: []}]);
+            assert.deepEqual(result, [{positions: {},
+                                       paths: []},
+                                      {positions: {},
+                                       paths: []}]);
             done();
         });
     });
