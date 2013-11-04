@@ -58,7 +58,7 @@ L.Control.TopoRouteControl = L.Control.extend({
             this._map.spin(true);
         }, this);
         this.router.on('computed', function (e) {
-            this.handler.setResult(e.data);
+            this.handler.setResult(e.result);
             this._map.spin(false);
         }, this);
         return this._initContainer();
@@ -205,21 +205,21 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
         this.fire('toporoute:compute', {data: data});
     },
 
-    setResult: function (data) {
+    setResult: function (result) {
         if (this._result) {
             this._map.almostOver.removeLayer(this._result);
             this._map.removeLayer(this._result);
             this._result = null;
         }
 
-        if (data) {
+        if (result) {
             this._map.almostOver.removeLayer(this._pathsLayer);
             this.polylineHandles.options.attachOnClick = false;
 
             this._result = L.featureGroup();
             this._result.addTo(this._map);
-            for (var i=0; i<data.layers.length; i++) {
-                var route = data.layers[i];
+            for (var i=0; i<result.layers.length; i++) {
+                var route = result.layers[i];
                 this._result.addLayer(route);
                 this._map.almostOver.addLayer(route);
                 // Keep route index to insert via step
