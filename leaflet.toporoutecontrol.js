@@ -346,7 +346,8 @@ L.Util.TopoRoute.toGeometry = function (shortest, map, idToLayer) {
     var latlngs = [];
     for (var i=0; i<shortest.paths.length; i++) {
         var polyline = idToLayer(shortest.paths[i]),
-            pos = shortest.positions[i] || [0, 1];
+            pos = shortest.positions ?
+                  shortest.positions[i] || [0, 1] : [0, 1];
 
         var subline = L.GeometryUtil.extract(map, polyline, pos[0], pos[1]);
         latlngs = latlngs.concat(subline);
