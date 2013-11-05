@@ -123,6 +123,7 @@ describe('L.Handler.TopoRouteHandler', function() {
 
         paths = L.geoJson({features: []});
         var onepath = L.polyline([[0, 0], [0, 10]]);
+        onepath.feature = {id: 1};
         paths.addLayer(onepath);
         paths.addTo(map);
     });

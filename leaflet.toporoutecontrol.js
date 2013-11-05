@@ -195,14 +195,17 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
     _computeRoute: function () {
         var data = {
             start: {latlng: this._start.getLatLng(),
-                    layer: this._start.attached},
+                    layer: this._start.attached,
+                    id: this._start.attached.feature.id},
             end: {latlng: this._end.getLatLng(),
-                  layer: this._end.attached},
+                  layer: this._end.attached,
+                  id: this._end.attached.feature.id},
             vias: []
         };
         for (var i=0, n=this._vias.length; i<n; i++) {
             data.vias.push({latlng: this._vias[i].getLatLng(),
-                            layer: this._vias[i].attached});
+                            layer: this._vias[i].attached,
+                            id: this._vias[i].attached.feature.id});
         }
         this.fire('toporoute:compute', data);
     },
