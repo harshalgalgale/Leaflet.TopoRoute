@@ -274,24 +274,24 @@ describe('L.Handler.TopoRouteHandler', function() {
 
         beforeEach(function () {
             path = paths.getLayers()[0];
-            start = L.marker([0, 0]);
-            end = L.marker([1, 1]);
+            start = L.marker([0, 1]);
+            end = L.marker([0, 9]);
             handler.polylineHandles.fire('attach', {marker: start, layer: path});
             handler.polylineHandles.fire('attach', {marker: end, layer: path});
         });
 
         it('should provide start, end and via points', function(done) {
             var data;
-            var middle = L.marker([0.5, 0]);
+            var middle = L.marker([0, 5]);
             handler.on('toporoute:compute', function (e) {data = e;});
             handler.polylineHandles.fire('attach', {marker: middle, layer: path});
-            assert.equal(data.start.latlng, start.getLatLng());
-            assert.equal(data.start.layer, path);
-            assert.equal(data.end.latlng, end.getLatLng());
-            assert.equal(data.end.layer, path);
+            assert.equal(data.start.id, path.feature.id);
+            assert.equal(data.start.position, 0.09999999999999964);
+            assert.equal(data.end.id, path.feature.id);
+            assert.equal(data.end.position, 0.9000000000000008);
             assert.equal(data.vias.length, 1);
-            assert.equal(data.vias[0].latlng, middle.getLatLng());
-            assert.equal(data.vias[0].layer, path);
+            assert.equal(data.vias[0].id, path.feature.id);
+            assert.equal(data.vias[0].position, 0.4999999999999982);
             done();
         });
 

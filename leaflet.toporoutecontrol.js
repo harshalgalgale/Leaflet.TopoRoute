@@ -193,21 +193,24 @@ L.Handler.TopoRouteHandler = L.Handler.extend({
     },
 
     _computeRoute: function () {
-        var data = {
-            start: {latlng: this._start.getLatLng(),
-                    layer: this._start.attached,
-                    id: this._start.attached.feature.id},
-            end: {latlng: this._end.getLatLng(),
-                  layer: this._end.attached,
-                  id: this._end.attached.feature.id},
+        var map = this._map,
+            data = {
+            start: _data(this._start),
+            end: _data(this._end),
             vias: []
         };
         for (var i=0, n=this._vias.length; i<n; i++) {
-            data.vias.push({latlng: this._vias[i].getLatLng(),
-                            layer: this._vias[i].attached,
-                            id: this._vias[i].attached.feature.id});
+            data.vias.push(_data(this._vias[i]));
         }
         this.fire('toporoute:compute', data);
+
+        function _data(marker) {
+            var pos = L.GeometryUtil.locateOnLine(map,
+                                                  marker.attached,
+                                                  marker.getLatLng());
+            return {id: marker.attached.feature.id,
+                    position: pos};
+        }
     },
 
     _getRoute: function (shortest) {
