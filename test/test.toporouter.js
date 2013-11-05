@@ -37,7 +37,7 @@ describe('L.TopoRouter', function() {
                         '101': {length: 1.414},
                         '102': {length: 7}}
             };
-            router.setGraph(data);
+            router.setGraph(data, function () {});
         });
 
         it('should return null if no path found', function(done) {
@@ -49,20 +49,24 @@ describe('L.TopoRouter', function() {
         });
 
         it('should result single layer if no vias', function(done) {
-            var result = router.compute({id: 100}, {id: 101});
-            assert.deepEqual(result, [{positions: {},
+            var result = router.compute({id: 100, position: 0.1},
+                                        {id: 101, position: 0.9});
+            assert.deepEqual(result, [{positions: {'0': [0.1, 0.9]},
                                        paths: [100]}]);
-            var result = router.compute({id: 101}, {id: 100});
-            assert.deepEqual(result, [{positions: {},
+            var result = router.compute({id: 101, position: 0.9},
+                                        {id: 100, position: 0.1});
+            assert.deepEqual(result, [{positions: {'0': [0.9, 0.1]},
                                        paths: [100]}]);
             done();
         });
 
         it('should as many paths as vias', function(done) {
-            var result = router.compute({id: 100}, {id: 102}, [{id: 101}]);
-            assert.deepEqual(result, [{positions: {},
+            var result = router.compute({id: 100, position: 0.1},
+                                        {id: 102, position: 0.9},
+                                        [{id: 101, position: 0.5}]);
+            assert.deepEqual(result, [{positions: {'0': [0.1, 0.5]},
                                        paths: [100]},
-                                      {positions: {},
+                                      {positions: {'0': [0.5, 0.9]},
                                        paths: [101]}]);
             done();
         });

@@ -73,14 +73,15 @@
         var topologyControl = new L.Control.TopoRouteControl({position: 'topleft'});
         map.addControl(topologyControl);
 
-        var byid = {};
+        var byid = {},
+            idToLayer = function (id) {return byid[id]};
         var paths = L.geoJson.ajax('data/path.geojson', {
             style: {weight: 2},
             onEachFeature: function (feature, layer) {
                 byid[feature.id] = layer;
             }
         });
-        topologyControl.handler.setPathsLayer(paths, function (id) {return byid[id]});
+        topologyControl.handler.setPathsLayer(paths, idToLayer);
 
         paths.on('data:loaded', function () {
             map.fitBounds(paths.getBounds());
@@ -88,7 +89,7 @@
         paths.addTo(map);
 
         L.Util.ajax("data/graph.json").then(function(data) {
-            topologyControl.router.setGraph(data);
+            topologyControl.router.setGraph(data, idToLayer);
         });
     };
   </script>

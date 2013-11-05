@@ -271,10 +271,12 @@ L.TopoRouter = L.Class.extend({
     initialize: function () {
         this._graph = null;
         this._data = null;
+        this._idToLayer = null;
     },
 
-    setGraph: function (data) {
+    setGraph: function (data, idToLayer) {
         this._data = data;
+        this._idToLayer = idToLayer;
 
         var input = {};
         for (var node in data.nodes) {
@@ -327,7 +329,7 @@ L.TopoRouter = L.Class.extend({
             edges.push(this._getEdge(nodes[i], nodes[i+1]));
         }
 
-        return L.Util.TopoRoute.shortestPath(start, end, edges);
+        return L.Util.TopoRoute.shortestPath(start, end, edges, this._idToLayer);
     },
 
     _getEdge: function (a, b) {
@@ -350,9 +352,21 @@ L.TopoRouter = L.Class.extend({
 
 L.Util.TopoRoute = {};
 
-L.Util.TopoRoute.shortestPath = function (start, end, edges) {
-    return {positions: {},
-            paths: edges};
+L.Util.TopoRoute.shortestPath = function (start, end, edges, idToLayer) {
+    var single_path = edges.length === 1;
+
+    var positions = {};
+    if (single_path) {
+        positions[0] = [start.position, end.position];
+    }
+    else {
+        positions[0] = [start.position, 1];
+        positions[edges.length-1] = [0, end.position];
+    }
+    return {
+        positions: positions,
+        paths: edges
+    };
 };
 
 L.Util.TopoRoute.toGeometry = function (shortest, map, idToLayer) {
