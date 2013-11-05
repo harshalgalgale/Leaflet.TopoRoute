@@ -272,6 +272,8 @@ L.TopoRouter = L.Class.extend({
         this._graph = null;
         this._data = null;
         this._idToLayer = null;
+        this._virtual = {};
+        this._nodeMaxId = -1;
     },
 
     setGraph: function (data, idToLayer) {
@@ -286,7 +288,13 @@ L.TopoRouter = L.Class.extend({
                 var edgeid = data.nodes[node][dest],
                     edge = data.edges[edgeid];
                 input[node][dest] = edge.length;
+
+                if (dest > this._nodeMaxId)
+                    this._nodeMaxId = dest;
             }
+
+            if (node > this._nodeMaxId)
+                this._nodeMaxId = node;
         }
         this._graph = new Graph(input);
     },
@@ -317,17 +325,27 @@ L.TopoRouter = L.Class.extend({
     },
 
     _shortestPath: function (start, end) {
-        var startnode = this._getNode(start.id),
-            endnode = this._getNode(end.id),
+        var startnode = this._getNode(start),
+            endnode = this._getNode(end),
             nodes = this._graph.findShortestPath(startnode, endnode);
 
-        if (!nodes || nodes.length === 0)
+        if (!nodes || nodes.length === 0) {
+            console.warn('No way found between ', JSON.stringify(start), startnode, JSON.stringify(end), endnode);
             return null;
+        }
 
         var edges = [];
         for (var i=0; i<nodes.length-1; i++) {
             edges.push(this._getEdge(nodes[i], nodes[i+1]));
         }
+
+        // Clean-up
+        for (var s in this._virtual) {
+            var d = this._virtual[s];
+            delete this._graph.map[s][d];
+            delete this._data.nodes[s][d];
+        }
+        this._virtual = {};
 
         return L.Util.TopoRoute.shortestPath(start, end, edges, this._idToLayer);
     },
@@ -337,15 +355,43 @@ L.TopoRouter = L.Class.extend({
         return edgeid;
     },
 
-    _getNode: function (edge) {
+    _getNodes: function (edge) {
         for (var node in this._data.nodes) {
             for (var dest in this._data.nodes[node]) {
                 var edgeid = this._data.nodes[node][dest];
                 if (edge == edgeid) {
-                    return node;
+                    return [node, dest];
                 }
             }
         }
+        throw new Error("Unknown edge " + edge);
+    },
+
+    _getNode: function (input) {
+        var edgeid = input.id,
+            nodes = this._getNodes(edgeid),
+            source = nodes[0],
+            dest = nodes[1],
+            cost = this._getEdge(source, dest);
+
+        if (input.position === 0)
+            return source;
+        if (input.position === 1)
+            return dest;
+
+        // Create intermediary node
+        // because input.position > 0 && input.position < 1
+        var newnode = ++this._nodeMaxId;
+        this._graph.map[source][newnode] = input.position * cost;
+        this._graph.map[newnode] = {};
+        this._graph.map[newnode][dest] = (1-input.position) * cost;
+        this._data.nodes[source][newnode] = edgeid;
+        this._data.nodes[newnode] = {};
+        this._data.nodes[newnode][dest] = edgeid;
+        // Keep-track, for clean-up
+        this._virtual[source] = newnode;
+        this._virtual[newnode] = dest;
+        return newnode;
     }
 });
 

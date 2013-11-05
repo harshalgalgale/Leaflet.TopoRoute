@@ -1,6 +1,6 @@
 describe('L.Util.TopoRoute', function() {
 
-    describe('toGeometry', function() {
+    describe('toGeometry()', function() {
 
         var map;
 
