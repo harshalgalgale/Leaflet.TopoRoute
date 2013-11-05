@@ -399,16 +399,166 @@ L.TopoRouter = L.Class.extend({
 L.Util.TopoRoute = {};
 
 L.Util.TopoRoute.shortestPath = function (start, end, edges, idToLayer) {
-    var single_path = edges.length === 1;
+    var polylines = [];
+    for (var i=0, n=edges.length; i<n; i++) {
+        polylines.push(idToLayer(edges[i]));
+    }
+
+    var single_path = edges.length === 1,
+        startPos = start.position,
+        endPos = end.position,
+        polyline_start = polylines[0],
+        polyline_end = polylines[polylines.length-1];
 
     var positions = {};
+
     if (single_path) {
-        positions[0] = [start.position, end.position];
+        var lls = polyline_start.getLatLngs();
+
+        single_path_loop = lls[0].equals(lls[lls.length-1]);
+
+        if (single_path_loop && Math.abs(endPos - startPos) > 0.5) {
+            /*
+             *        A
+             *     //=|---+
+             *   +//      |   It is shorter to go through
+             *    \\      |   extremeties than the whole loop
+             *     \\=|---+
+             *        B
+             */
+            var edgeid = edges[0];
+            if (endPos - startPos > 0.5) {
+                edges = [edgeid, edgeid];
+                positions[0] = [startPos, 0.0];
+                positions[1] = [1.0, endPos];
+            }
+            else if (endPos - startPos < -0.5) {
+                edges = [edgeid, edgeid];
+                positions[0] = [endPos, 0.0];
+                positions[1] = [1.0, startPos];
+            }
+        }
+        else {
+            /*        A     B
+             *   +----|=====|---->
+             *
+             *        B     A
+             *   +----|=====|---->
+             */
+            positions[0] = [startPos, endPos];
+        }
     }
     else {
-        positions[0] = [start.position, 1];
-        positions[edges.length-1] = [0, end.position];
+        /*
+         * Add first portion of line
+         */
+        var start_lls = polyline_start.getLatLngs(),
+            first_end = start_lls[start_lls.length-1],
+            start_on_loop = start_lls[0].equals(first_end);
+
+        if (L.GeometryUtil.startsAtExtremity(polyline_start, polylines[1])) {
+            var next_lls = polylines[1].getLatLngs(),
+                next_end = next_lls[next_lls.length-1],
+                share_end = first_end.equals(next_end);
+            if ((start_on_loop && startPos > 0.5) ||
+                (share_end && startPos > 0.5 && endPos > 0.5)) {
+                /*
+                 *       A
+                 *    /--|===+    B
+                 *  +/       \\+==|---
+                 *   \       /
+                 *    \-----+
+                 *
+                 *        A               B
+                 *   +----|------><-------|----
+                 *
+                 *   +----|=====|><=======|----
+                 *
+                 */
+                positions[0] = [startPos, 1.0];
+            }
+            else {
+                /*
+                 *        A               B
+                 *   <----|------++-------|----
+                 *
+                 *   <----|=====|++=======|----
+                 *
+                 */
+                positions[0] = [startPos, 0.0];
+            }
+        } else {
+            /*
+             *        A               B
+             *   +----|------>+-------|----
+             *
+             *   +----|=====|>+=======|----
+             *
+             */
+            positions[0] = [startPos, 1.0];
+        }
+
+        /*
+         * Add all intermediary lines
+         */
+        for (var i=1; i<polylines.length-1; i++) {
+            var previous = polylines[i-1],
+                polyline = polylines[i];
+            if (L.GeometryUtil.startsAtExtremity(polyline, previous)) {
+                positions[i] = [0.0, 1.0];
+            }
+            else {
+                positions[i] = [1.0, 0.0];
+            }
+        }
+
+        /*
+         * Add last portion of line
+         */
+        var end_lls = polyline_end.getLatLngs(),
+            last_end = end_lls[end_lls.length-1],
+            end_on_loop = end_lls[0].equals(last_end);
+
+        if (L.GeometryUtil.startsAtExtremity(polyline_end, polylines[polylines.length - 2])) {
+            var previous_lls = polylines[polylines.length - 2].getLatLngs(),
+                previous_end = previous_lls[previous_lls.length-1],
+                share_end = last_end.equals(previous_end);
+            if ((end_on_loop && endPos > 0.5) ||
+                (share_end && startPos > 0.5 && endPos > 0.5)) {
+                /*
+                 *              B
+                 *     A    //==|-+
+                 *  ---|==+//     |
+                 *         \      |
+                 *          \-----+
+                 *
+                 *        A               B
+                 *   -----|------><-------|----+
+                 *
+                 *   -----|======>|+======>---->
+                 */
+                positions[polylines.length - 1] = [1.0, endPos];
+            }
+            else {
+                /*
+                 *        A               B
+                 *   -----|------++-------|---->
+                 *
+                 *   -----|======+|=======>---->
+                 */
+                positions[polylines.length - 1] = [0.0, endPos];
+            }
+        } else {
+            /*
+             *        A               B
+             *   -----|------+<-------|----+
+             *
+             *   -----|=====|+<=======|----+
+             */
+            positions[polylines.length - 1] = [1.0, endPos];
+        }
     }
+
     return {
         positions: positions,
         paths: edges

@@ -39,7 +39,16 @@ describe('L.TopoRouter', function() {
                         '102': {length: 7},
                         '103': {length: 5}}
             };
-            router.setGraph(data, function () {});
+            var idToLayer = function (id) {
+                var layers = {
+                    '100': L.polyline([[0, 0], [0, 10]]),
+                    '101': L.polyline([[0, 10], [0, 20]]),
+                    '102': L.polyline([[0, 20], [0, 30]]),
+                    '103': L.polyline([[30, 30], [30, 40]])
+                };
+                return layers[id];
+            };
+            router.setGraph(data, idToLayer);
         });
 
         it('should return null if no path found', function(done) {
@@ -80,6 +89,14 @@ describe('L.TopoRouter', function() {
             done();
         });
 
+        it('should work as reverse path', function(done) {
+            var result = router.compute({id: 101, position: 1},
+                                        {id: 100, position: 0});
+            assert.deepEqual(result, [{positions: {'0': [1, 0],
+                                                   '1': [1, 0]},
+                                       paths: [101, 100]}]);
+            done();
+        });
     });
 
 
