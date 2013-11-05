@@ -303,6 +303,10 @@ L.TopoRouter = L.Class.extend({
             shortest = this._shortestPath(vias[vias.length-1], end);
             result.push(shortest);
         }
+
+        if (result.indexOf(null) > -1)
+            result = null;
+
         this.fire('computed', {result: result});
         return result;
     },
@@ -311,6 +315,9 @@ L.TopoRouter = L.Class.extend({
         var startnode = this._getNode(start.id),
             endnode = this._getNode(end.id),
             nodes = this._graph.findShortestPath(startnode, endnode);
+
+        if (!nodes || nodes.length === 0)
+            return null;
 
         var edges = [];
         for (var i=0; i<nodes.length-1; i++) {

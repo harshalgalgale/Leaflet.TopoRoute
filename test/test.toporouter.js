@@ -27,10 +27,25 @@ describe('L.TopoRouter', function() {
         before(function () {
             router = new L.TopoRouter();
             var data = {
-                nodes: {'1': {'2': 100}, '2': {'1': 101}},
-                edges: {'100': {length: 3.14}, '101': {length: 1.414}}
+                nodes: {'1': {'2': 100},
+                        '2': {'1': 100,
+                              '3': 101},
+                        '3': {'2': 101,
+                              '4': 102},
+                        '4': {'3': 102}},
+                edges: {'100': {length: 3.14},
+                        '101': {length: 1.414},
+                        '102': {length: 7}}
             };
             router.setGraph(data);
+        });
+
+        it('should return null if no path found', function(done) {
+            var result = router.compute(333, 444);
+            assert.equal(result, null);
+            result = router.compute(100, 102, [101, 444]);
+            assert.equal(result, null);
+            done();
         });
 
         it('should result single layer if no vias', function(done) {
@@ -39,16 +54,16 @@ describe('L.TopoRouter', function() {
                                        paths: [100]}]);
             var result = router.compute({id: 101}, {id: 100});
             assert.deepEqual(result, [{positions: {},
-                                       paths: [101]}]);
+                                       paths: [100]}]);
             done();
         });
 
         it('should as many paths as vias', function(done) {
-            var result = router.compute(100, 101, [100]);
+            var result = router.compute({id: 100}, {id: 102}, [{id: 101}]);
             assert.deepEqual(result, [{positions: {},
-                                       paths: []},
+                                       paths: [100]},
                                       {positions: {},
-                                       paths: []}]);
+                                       paths: [101]}]);
             done();
         });
     });
